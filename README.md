@@ -31,7 +31,7 @@ The project is strictly divided into two primary subsystems to ensure clean sepa
 Clone the repository and run `make` to compile the server executable.
 
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:fog-3/ft_irc.git
 cd ft_irc
 make
 ```
@@ -65,3 +65,26 @@ irssi
 # Inside irssi type:
 /connect 127.0.0.1 6667 mypassword
 ```
+
+## 🤝 Team organization
+
+### Role 1: The C++ Engine & IRC Protocol
+
+Responsabilities of this role:
+- **The parser:** writing the logic to take a raw string `JOIN #general` and slice it into a Command, Target, and Parameter. This requires heavy use of `std::string` methods, iterators, and vectors.
+
+- **The Command Factory:** Building the routing logic. When a parsed command arrives, he will use maps or function pointers to trigger the correct execution function (e.g., `executeJoin()`, `executePrivmsg()`).
+
+- **The Numeric Replies (RPLs):** The IRC protocol requires specific, highly formatted string responses (like `001 RPL_WELCOME` or `404 ERR_CANNOTSENDTOCHAN`). This role can build a dedicated class to generate these cleanly.
+
+- **Channel Logic:** managing the data structures for channels, checking who is an operator, and applying channel modes.
+
+### Role 2: System Core & Network Architecture
+
+- **The Multiplexer (poll):** Setting up the non-blocking sockets and the infinite loop that monitors all file descriptors. You decide when to read from a client and when it is safe to write to them.
+
+- **Buffer Management (Crucial):** Network streams are unpredictable. You will read raw bytes and append them to a specific client's buffer. You must hunt for the \r\n delimiter. When you find it, you extract that complete line and hand it over to the parser.
+
+- **Client State Machine:** Tracking whether a client has just connected, has sent their PASS, has fully registered with NICK/USER, or is ready to chat.
+
+- **Memory & Disconnect Handling:** Ensuring that when a client drops the connection (Ctrl+C), their file descriptor is closed, their data is wiped from all channels, and absolutely no memory leaks occur.
