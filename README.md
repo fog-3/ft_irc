@@ -88,3 +88,10 @@ Responsabilities of this role:
 - **Client State Machine:** Tracking whether a client has just connected, has sent their PASS, has fully registered with NICK/USER, or is ready to chat.
 
 - **Memory & Disconnect Handling:** Ensuring that when a client drops the connection (Ctrl+C), their file descriptor is closed, their data is wiped from all channels, and absolutely no memory leaks occur.
+
+### First steps
+- Write `Client.hpp` and `Server.hpp` files together. Decide what data a Client needs to hold (socket FD, IP address, input buffer, nicname, boolean flags for registration).
+
+- Define the Handoff. Agree on exactly how to pass data to the parser. Usually, this looks like a method inside the Server class: `void Server::processLine(Client &sender, std::string line);`. Once you call that, it send to the parser and it have to parse and execute it.
+
+- Setup the Skeleton. Create the Makefile, compile an empty `main.cpp`, and get the repository initialized so we can branch off.
