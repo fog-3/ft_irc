@@ -20,6 +20,7 @@ class Server
 	Server &operator=(Server const &copy);
 	~Server();
 
+	std::string	getPassword() const;
 	void run();
 	
 	private:

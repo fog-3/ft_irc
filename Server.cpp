@@ -34,5 +34,10 @@ Server::~Server()
 	std::cout << "Server destructor has been called." << std::endl;
 }
 
+std::string	Server::getPassword() const
+{
+	return (this->_password);
+}
+
 void	Server::run()
 {}

@@ -7,10 +7,14 @@ SRCS = main.cpp \
 Client.cpp \
 Server.cpp \
 Channel.cpp \
+Parser.cpp \
+Commands.cpp \
 
 HDRS = Client.hpp \
 Server.hpp \
 Channel.hpp \
+Message.hpp \
+Commands.hpp \
 
 OBJS = $(SRCS:.cpp=.o)
 

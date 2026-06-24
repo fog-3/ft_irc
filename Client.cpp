@@ -29,3 +29,13 @@ Client::~Client()
 {
 	std::cout << "Client destructor has been called." << std::endl;
 }
+
+bool	Client::getAuthenticated() const
+{
+	return (this->_authenticated);
+}
+
+void	Client::setAuthenticated(bool set)
+{
+	this->_authenticated = set;
+}

@@ -12,6 +12,9 @@ class Client
 	Client(Client const &copy);
 	Client &operator=(Client const &copy);
 	~Client();
+
+	bool	getAuthenticated() const;
+	void	setAuthenticated(bool set);
 	
 	private:
 	int			_fd;
