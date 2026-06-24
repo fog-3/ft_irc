@@ -7,6 +7,7 @@
 #include <poll.h>
 #include <iostream>
 #include <cstdlib>
+#include "Message.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
 
