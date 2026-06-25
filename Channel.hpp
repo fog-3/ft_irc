@@ -9,9 +9,18 @@ class Channel
 {
 	public:
 	Channel();
+	Channel(std::string name);
 	Channel(Channel const &copy);
 	Channel &operator=(Channel const &copy);
 	~Channel();
+
+	void	addMember(Client *client);
+	std::map<Client*, bool>	getMembers() const;
+	std::vector<std::string>	getInviteList() const;
+	bool	getInviteOnly() const;
+	std::string	getKey() const;
+	int	getLimit() const;
+	std::string	getName() const;
 	
 	private:
 	std::string _name;

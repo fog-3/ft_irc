@@ -13,8 +13,14 @@ class Client
 	Client &operator=(Client const &copy);
 	~Client();
 
-	bool	getAuthenticated() const;
-	void	setAuthenticated(bool set);
+	bool		getAuthenticated() const;
+	void		setAuthenticated(bool set);
+	bool		getRegistered() const;
+	void		setRegistered(bool set);
+	std::string	getNickname() const;
+	void		setNickname(std::string nick);
+	std::string	getUsername() const;
+	void		setUsername(std::string user);
 	
 	private:
 	int			_fd;

@@ -21,7 +21,10 @@ class Server
 	~Server();
 
 	std::string	getPassword() const;
-	void run();
+	Channel*	findChannel(std::string name);
+	void	addChannel(Channel *channel); 
+	bool	isNickTaken(std::string nick);
+	void	run();
 	
 	private:
 	int _port;

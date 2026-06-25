@@ -39,3 +39,33 @@ void	Client::setAuthenticated(bool set)
 {
 	this->_authenticated = set;
 }
+
+bool	Client::getRegistered() const
+{
+	return (this->_registered);
+}
+
+void	Client::setRegistered(bool set)
+{
+	this->_registered = set;
+}
+
+std::string	Client::getNickname() const
+{
+	return (this->_nickname);
+}
+
+void	Client::setNickname(std::string nick)
+{
+	this->_nickname = nick;
+}
+
+std::string	Client::getUsername() const
+{
+	return (this->_username);
+}
+
+void	Client::setUsername(std::string user)
+{
+	this->_username = user;
+}
