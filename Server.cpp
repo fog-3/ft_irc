@@ -62,5 +62,15 @@ bool	Server::isNickTaken(std::string nick)
 	return (false);
 }
 
+Client*	Server::findClient(std::string nick)
+{
+	for	(std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second->getNickname() == nick)
+			return (it->second);
+	}
+	return (NULL);
+}
+
 void	Server::run()
 {}

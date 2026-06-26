@@ -9,5 +9,11 @@ void	cmdPass(Server &serv, Client &client, Message &msg);
 void	cmdNick(Server &serv, Client &client, Message &msg);
 void	cmdUser(Server &serv, Client &client, Message &msg);
 void	cmdJoin(Server &serv, Client &client, Message &msg);
+void	cmdPrivmsg(Server &serv, Client &client, Message &msg);
+void	cmdPart(Server &serv, Client &client, Message &msg);
+void	cmdKick(Server &serv, Client &client, Message &msg);
+void	cmdInvite(Server &serv, Client &client, Message &msg);
+void	cmdTopic(Server &serv, Client &client, Message &msg);
+void	cmdMode(Server &serv, Client &client, Message &msg);
 
 #endif
