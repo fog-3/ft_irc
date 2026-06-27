@@ -21,6 +21,7 @@ class Client
 	void		setNickname(std::string nick);
 	std::string	getUsername() const;
 	void		setUsername(std::string user);
+	int			getFd() const;
 	
 	private:
 	int			_fd;

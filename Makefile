@@ -1,4 +1,4 @@
-NAME = irc
+NAME = ircserv
 
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
@@ -9,6 +9,7 @@ Server.cpp \
 Channel.cpp \
 Parser.cpp \
 Commands.cpp \
+Message.cpp \
 
 HDRS = Client.hpp \
 Server.hpp \

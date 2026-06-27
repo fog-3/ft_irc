@@ -69,3 +69,8 @@ void	Client::setUsername(std::string user)
 {
 	this->_username = user;
 }
+
+int	Client::getFd() const
+{
+	return (this->_fd);
+}

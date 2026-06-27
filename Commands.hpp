@@ -3,7 +3,13 @@
 
 #include <string>
 #include <algorithm>
+#include <sys/socket.h>
+#include "Message.hpp"
 #include "Server.hpp"
+
+void	sendError(Client &client, int code);
+void	sendToClient(Client &client, std::string msg);
+void	processLine(Server &serv, Client &client, std::string msg);
 
 void	cmdPass(Server &serv, Client &client, Message &msg);
 void	cmdNick(Server &serv, Client &client, Message &msg);

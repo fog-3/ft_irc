@@ -4,14 +4,14 @@ void	cmdPass(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.empty())
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (msg.params[0] == serv.getPassword())
 		client.setAuthenticated(true);
 	else
 	{
-		// TODO: send error
+		sendError(client, 464);
 		return ;
 	}
 }
@@ -20,17 +20,17 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.empty())
 	{
-		// TODO: send error
+		sendError(client, 431);
 		return ;
 	}
 	if (!client.getAuthenticated())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	if (serv.isNickTaken(msg.params[0]))
 	{
-		// TODO: send error
+		sendError(client, 433);
 		return ;
 	}
 	client.setNickname(msg.params[0]);
@@ -43,17 +43,17 @@ void	cmdUser(Server &serv, Client &client, Message &msg)
 	(void)serv;
 	if (client.getUsername() != "")
 	{
-		// TODO: send error
+		sendError(client, 462);
 		return ;
 	}
 	if (msg.params.empty())
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getAuthenticated())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	client.setUsername(msg.params[0]);
@@ -65,46 +65,57 @@ void	cmdJoin(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.empty())
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel *chan = serv.findChannel(msg.params[0]);
 	if (chan)
 	{
 		std::map<Client*, bool> members = chan->getMembers();
+		if (chan->getLimit() != -1 && static_cast<size_t>(chan->getLimit()) < members.size() + 1)
+		{
+			sendError(client, 471);
+			return ;
+		}
 		if (members.find(&client) != members.end())
 		{
-			// TODO: send error
+			sendError(client, 443);
 			return ;
 		}
 		if (chan->getInviteOnly())
 		{
-			std::vector<std::string>::iterator it = std::find(chan->getInviteList().begin(), chan->getInviteList().end(), client.getNickname());
-			if (it == chan->getInviteList().end())
+			std::vector<std::string>	inviteList = chan->getInviteList();
+			std::vector<std::string>::iterator it = std::find(inviteList.begin(), inviteList.end(), client.getNickname());
+			if (it == inviteList.end())
 			{
-				// TODO: send error
+				sendError(client, 473);
 				return ;
 			}
 		}
 		if (chan->getKey() != "" && (msg.params.size() < 2 || msg.params[1] != chan->getKey()))
 		{
-			// TODO: send error
+			sendError(client, 475);
 			return ;
 		}
 		chan->addMember(&client);
-		// TODO: send join notification
+		for (std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)
+			sendToClient(*it2->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv JOIN "
+				+ chan->getName() + "\r\n");
+		sendToClient(client, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv JOIN "
+			+ chan->getName() + "\r\n");
 	}
 	else
 	{
 		Channel *newChan = new Channel(msg.params[0]);
 		serv.addChannel(newChan);
 		newChan->addMember(&client);
-		// TODO: send join notification
+		sendToClient(client, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv JOIN "
+			+ newChan->getName() + "\r\n");
 	}
 }
 
@@ -112,12 +123,12 @@ void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.size() < 2)
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[0]);
@@ -126,7 +137,8 @@ void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
 		std::map<Client*, bool> members = chan->getMembers();
 		for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
 		{
-			// TODO: send message
+			sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PRIVMSG "
+				+ msg.params[0] + " :" + msg.params[1] + "\r\n");
 		}
 	}
 	else
@@ -134,10 +146,11 @@ void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
 		Client	*addr = serv.findClient(msg.params[0]);
 		if (!addr)
 		{
-			// TODO: send error
+			sendError(client, 401);
 			return ;
 		}
-		// TODO: send message
+		sendToClient(*addr, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PRIVMSG "
+			+ msg.params[0] + " :" + msg.params[1] + "\r\n");
 	}
 }
 
@@ -145,24 +158,24 @@ void	cmdPart(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.empty())
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[0]);
 	if (!chan)
 	{
-		// TODO: send error
+		sendError(client, 403);
 		return ;
 	}
 	std::map<Client*, bool> members = chan->getMembers();
 	if (members.find(&client) == members.end())
 	{
-		// TODO: send error
+		sendError(client, 442);
 		return ;
 	}
 	chan->removeMember(&client);
@@ -172,43 +185,43 @@ void	cmdKick(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.size() < 2)
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[0]);
 	if (!chan)
 	{
-		// TODO: send error
+		sendError(client, 403);
 		return ;
 	}
 	std::map<Client*, bool> members = chan->getMembers();
 	std::map<Client *, bool>::iterator it = members.find(&client);
 	if (it == members.end())
 	{
-		// TODO: send error
+		sendError(client, 442);
 		return ;
 	}
 	if (!it->second)
 	{
-		// TODO: send error
+		sendError(client, 482);
 		return ;
 	}
 	Client	*rem = serv.findClient(msg.params[1]);
 	if (!rem)
 	{
-		// TODO: send error
+		sendError(client, 401);
 		return ;
 	}
 	if (members.find(rem) != members.end())
 		chan->removeMember(rem);
 	else
 	{
-		// TODO: send error
+		sendError(client, 442);
 		return ;
 	}
 }
@@ -217,58 +230,59 @@ void	cmdInvite(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.size() < 2)
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[1]);
 	if (!chan)
 	{
-		// TODO: send error
+		sendError(client, 403);
 		return ;
 	}
 	std::map<Client*, bool> members = chan->getMembers();
 	std::map<Client *, bool>::iterator it = members.find(&client);
 	if (it == members.end())
 	{
-		// TODO: send error
+		sendError(client, 442);
 		return ;
 	}
 	if (!it->second)
 	{
-		// TODO: send error
+		sendError(client, 482);
 		return ;
 	}
 	Client	*inv = serv.findClient(msg.params[0]);
 	if (!inv)
 	{
-		// TODO: send error
+		sendError(client, 401);
 		return ;
 	}
 	chan->addToInviteList(inv->getNickname());
-	// TODO: send invite notification to inv
+	sendToClient(*inv, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv INVITE "
+		+ inv->getNickname() + " :" + chan->getName() + "\r\n");
 }
 
 void	cmdTopic(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.size() < 1)
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[0]);
 	if (!chan)
 	{
-		// TODO: send error
+		sendError(client, 403);
 		return ;
 	}
 	if (msg.params.size() < 2)
@@ -276,10 +290,10 @@ void	cmdTopic(Server &serv, Client &client, Message &msg)
 		std::string	topic = chan->getTopic();
 		if (topic.empty())
 		{
-			// TODO: send error
+			sendError(client, 331);
 			return ;
 		}
-		// TODO: send topic
+		sendToClient(client, ":ircserv 332 " + client.getNickname() + " " + chan->getName() + " :" + topic + "\r\n");
 	}
 	else
 	{
@@ -287,7 +301,7 @@ void	cmdTopic(Server &serv, Client &client, Message &msg)
 		std::map<Client *, bool>::iterator it = members.find(&client);
 		if (it == members.end())
 		{
-			// TODO: send error
+			sendError(client, 442);
 			return ;
 		}
 		if (!chan->getTopicRestricted() || it->second)
@@ -296,7 +310,7 @@ void	cmdTopic(Server &serv, Client &client, Message &msg)
 		}
 		else
 		{
-			// TODO: send error
+			sendError(client, 482);
 			return ;
 		}
 	}
@@ -306,30 +320,30 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 {
 	if (msg.params.size() < 2)
 	{
-		// TODO: send error
+		sendError(client, 461);
 		return ;
 	}
 	if (!client.getRegistered())
 	{
-		// TODO: send error
+		sendError(client, 451);
 		return ;
 	}
 	Channel	*chan = serv.findChannel(msg.params[0]);
 	if (!chan)
 	{
-		// TODO: send error
+		sendError(client, 403);
 		return ;
 	}
 	std::map<Client*, bool> members = chan->getMembers();
 	std::map<Client *, bool>::iterator it = members.find(&client);
 	if (it == members.end())
 	{
-		// TODO: send error
+		sendError(client, 442);
 		return ;
 	}
 	if (!it->second)
 	{
-		// TODO: send error
+		sendError(client, 482);
 		return ;
 	}
 	if (msg.params[1] == "+i")
@@ -353,13 +367,13 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		Client	*rem = serv.findClient(msg.params[2]);
 		if (!rem)
 		{
-			// TODO: send error
+			sendError(client, 401);
 			return ;
 		}
 		std::map<Client *, bool>::iterator it2 = members.find(rem);
 		if (it2 == members.end())
 		{
-			// TODO: send error
+			sendError(client, 442);
 			return ;
 		}
 		chan->setOperator(rem, true);
@@ -369,13 +383,13 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		Client	*rem2 = serv.findClient(msg.params[2]);
 		if (!rem2)
 		{
-			// TODO: send error
+			sendError(client, 401);
 			return ;
 		}
 		std::map<Client *, bool>::iterator it3 = members.find(rem2);
 		if (it3 == members.end())
 		{
-			// TODO: send error
+			sendError(client, 442);
 			return ;
 		}
 		chan->setOperator(rem2, false);

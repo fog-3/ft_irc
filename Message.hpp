@@ -5,13 +5,14 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
+#include <sys/socket.h>
 
 struct Message
 {
-	std::string	prefix;
-	std::string	command;
+	std::string					prefix;
+	std::string					command;
 	std::vector<std::string>	params;
-	std::string	trailing;
+	std::string					trailing;
 };
 
 Message	Parser(std::string mes);
