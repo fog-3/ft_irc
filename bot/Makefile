@@ -1,21 +1,12 @@
-NAME = ircserv
+NAME = irc
 
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRCS = main.cpp \
-Client.cpp \
-Server.cpp \
-Channel.cpp \
-Parser.cpp \
-Commands.cpp \
-Message.cpp \
+Bot.cpp \
 
-HDRS = Client.hpp \
-Server.hpp \
-Channel.hpp \
-Message.hpp \
-Commands.hpp \
+HDRS = Bot.hpp \
 
 OBJS = $(SRCS:.cpp=.o)
 

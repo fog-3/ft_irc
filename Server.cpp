@@ -193,3 +193,40 @@ void	Server::readFromClient(int client_fd){
 		std::cerr << "[SERVER] Error reading the socket message" << std::endl;
 	}
 }
+std::string	Server::getPassword() const
+{
+	return (this->_password);
+}
+
+Channel* Server::findChannel(std::string name)
+{
+	std::map<std::string, Channel*>::iterator it = _channels.find(name);
+	if (it == _channels.end())
+		return (NULL);
+	return (it->second);
+}
+
+void	Server::addChannel(Channel *channel)
+{
+	_channels[channel->getName()] = channel;
+}
+
+bool	Server::isNickTaken(std::string nick)
+{
+	for	(std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second->getNickname() == nick)
+			return (true);
+	}
+	return (false);
+}
+
+Client*	Server::findClient(std::string nick)
+{
+	for	(std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second->getNickname() == nick)
+			return (it->second);
+	}
+	return (NULL);
+}

@@ -14,13 +14,28 @@ class Client
 		Client &operator=(Client const &copy);
 		~Client();
 		
-		int getFd() const;
-		const std::string& getIp() const;
-		const std::string& getBuffer() const;
-		
-		void appendBuffer(const std::string& buffer);
-		void eraseBuffer(int length);
+		int			getFd() const;
+		void		setFd(int fd);
 
+		bool		getAuthenticated() const;
+		void		setAuthenticated(bool set);
+
+		bool		getRegistered() const;
+		void		setRegistered(bool set);
+
+		std::string	getNickname() const;
+		void		setNickname(std::string nick);
+
+		std::string	getUsername() const;
+		void		setUsername(std::string user);
+
+		const		std::string& getIp() const;
+		const		std::string& getBuffer() const;
+
+		
+		void		appendBuffer(const std::string& buffer);
+		void		eraseBuffer(int length);
+	
 	private:
 		int			_fd;
 		std::string	_ip;

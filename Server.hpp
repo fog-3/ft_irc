@@ -13,30 +13,35 @@
 class Server
 {
 	public:
-	Server();
-	Server(int port, std::string password);
-	Server(Server const &copy);
-	Server &operator=(Server const &copy);
-	~Server();
+		Server();
+		Server(int port, std::string password);
+		Server(Server const &copy);
+		Server &operator=(Server const &copy);
+		~Server();
 
-	void run();
+		std::string	getPassword() const;
+		Channel*	findChannel(std::string name);
+		void		addChannel(Channel *channel);
+		bool		isNickTaken(std::string nick);
+		Client*		findClient(std::string nick);
+		void		run();
 	
 	private:
-	int _port;
-	int _serverFd;
-	std::string _password;
-	std::map<int, Client*> _clients;
-	std::map<std::string, Channel*> _channels;
-	std::vector<struct pollfd> _pollfds;
+		int _port;
+		int _serverFd;
+		std::string _password;
+		std::map<int, Client*> _clients;
+		std::map<std::string, Channel*> _channels;
+		std::vector<struct pollfd> _pollfds;
 
-	// --- Net helpers ---
-	void initServer();				// socket(), bind(), listen()
-	void acceptNewClient();			// accept()
-	void readFromClient(int fd);	// recv()
-	void disconnectClient(int fd);	// close() y limpieza de memoria
+		// --- Net helpers ---
+		void initServer();				// socket(), bind(), listen()
+		void acceptNewClient();			// accept()
+		void readFromClient(int fd);	// recv()
+		void disconnectClient(int fd);	// close() y limpieza de memoria
 
-	// --- El puente lógico ---
-	void precessLine(Client& sender, const std::string& line);
+		// --- El puente lógico ---
+		void precessLine(Client& sender, const std::string& line);
 };
 
 #endif

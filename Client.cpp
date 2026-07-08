@@ -39,12 +39,57 @@ int	Client::getFd() const{
 	return _fd;
 }
 
+void	Client::setFd(int fd)
+{
+	this->_fd = fd;
+}
+
 const std::string& Client::getIp() const{
 	return _ip;
 }
 
 const std::string& Client::getBuffer() const{
 	return _buffer;
+}
+
+bool	Client::getAuthenticated() const
+{
+	return (this->_authenticated);
+}
+
+void	Client::setAuthenticated(bool set)
+{
+	this->_authenticated = set;
+}
+
+bool	Client::getRegistered() const
+{
+	return (this->_registered);
+}
+
+void	Client::setRegistered(bool set)
+{
+	this->_registered = set;
+}
+
+std::string	Client::getNickname() const
+{
+	return (this->_nickname);
+}
+
+void	Client::setNickname(std::string nick)
+{
+	this->_nickname = nick;
+}
+
+std::string	Client::getUsername() const
+{
+	return (this->_username);
+}
+
+void	Client::setUsername(std::string user)
+{
+	this->_username = user;
 }
 
 void Client::appendBuffer(const std::string& buffer){
