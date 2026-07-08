@@ -22,6 +22,7 @@ class Client
 	std::string	getUsername() const;
 	void		setUsername(std::string user);
 	int			getFd() const;
+	void		setFd(int fd);
 	
 	private:
 	int			_fd;

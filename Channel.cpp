@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel() : _name(), _topic(), _members(), _inviteList(), _inviteOnly(false), _topicRestricted(false), _key(), _limit(0)
+Channel::Channel() : _name(), _topic(), _members(), _inviteList(), _inviteOnly(false), _topicRestricted(false), _key(), _limit(-1)
 {
 	std::cout << "Channel Default constructor has been called." << std::endl;
 }

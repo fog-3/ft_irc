@@ -44,7 +44,7 @@ Message	Parser(std::string mes)
 	if (start < mes.size() && mes[start] == ':')
 	{
 		++start;
-		m.trailing = mes.substr(start);
+		m.params.push_back(split(mes, start));
 	}
 	return (m);
 }

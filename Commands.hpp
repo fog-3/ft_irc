@@ -21,5 +21,7 @@ void	cmdKick(Server &serv, Client &client, Message &msg);
 void	cmdInvite(Server &serv, Client &client, Message &msg);
 void	cmdTopic(Server &serv, Client &client, Message &msg);
 void	cmdMode(Server &serv, Client &client, Message &msg);
+void	cmdPing(Server &serv, Client &client, Message &msg);
+void	cmdQuit(Server &serv, Client &client, Message &msg);
 
 #endif

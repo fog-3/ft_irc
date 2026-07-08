@@ -35,7 +35,11 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 	}
 	client.setNickname(msg.params[0]);
 	if (client.getUsername() != "")
+	{
 		client.setRegistered(true);
+		sendToClient(client, ":ircserv 001 " + client.getNickname() + " :Welcome to the IRC server "
+			+ client.getNickname() + "!" + client.getUsername() + "@ircserv\r\n");
+	}
 }
 
 void	cmdUser(Server &serv, Client &client, Message &msg)
@@ -58,7 +62,11 @@ void	cmdUser(Server &serv, Client &client, Message &msg)
 	}
 	client.setUsername(msg.params[0]);
 	if (client.getNickname() != "")
+	{
 		client.setRegistered(true);
+		sendToClient(client, ":ircserv 001 " + client.getNickname() + " :Welcome to the IRC server "
+			+ client.getNickname() + "!" + client.getUsername() + "@ircserv\r\n");
+	}
 }
 
 void	cmdJoin(Server &serv, Client &client, Message &msg)
@@ -178,6 +186,11 @@ void	cmdPart(Server &serv, Client &client, Message &msg)
 		sendError(client, 442);
 		return ;
 	}
+	for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
+	{
+		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PART "
+			+ chan->getName() + "\r\n");
+	}
 	chan->removeMember(&client);
 }
 
@@ -216,6 +229,12 @@ void	cmdKick(Server &serv, Client &client, Message &msg)
 	{
 		sendError(client, 401);
 		return ;
+	}
+	std::string	reason = msg.params.size() >= 3 ? msg.params[2] : msg.params[1];
+	for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
+	{
+		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv KICK "
+			+ chan->getName() + " " + msg.params[1] + " :" + reason + "\r\n");
 	}
 	if (members.find(rem) != members.end())
 		chan->removeMember(rem);
@@ -394,4 +413,23 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		}
 		chan->setOperator(rem2, false);
 	}
+}
+
+void	cmdPing(Server &serv, Client &client, Message &msg)
+{
+	(void)serv;
+	if (msg.params.empty())
+	{
+		sendError(client, 461);
+		return ;
+	}
+	sendToClient(client, ":ircserv PONG ircserv :" + msg.params[0] + "\r\n");
+}
+
+void	cmdQuit(Server &serv, Client &client, Message &msg)
+{
+	(void)serv;
+	(void)client;
+	(void)msg;
+	// TODO
 }

@@ -74,3 +74,8 @@ int	Client::getFd() const
 {
 	return (this->_fd);
 }
+
+void	Client::setFd(int fd)
+{
+	this->_fd = fd;
+}

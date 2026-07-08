@@ -24,6 +24,10 @@ void	processLine(Server &serv, Client &client, std::string msg)
 		cmdTopic(serv,client, mes);
 	else if (mes.command == "MODE")
 		cmdMode(serv,client, mes);
+	else if (mes.command == "PING")
+		cmdPing(serv, client, mes);
+	else if (mes.command == "QUIT")
+		cmdQuit(serv, client, mes);
 	else
 	{
 		sendError(client, 421);
