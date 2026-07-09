@@ -37,7 +37,7 @@ void	processLine(Server &serv, Client &client, std::string msg)
 
 void	sendToClient(Client &client, std::string msg)
 {
-	send(client.getFd(), msg.c_str(), msg.size(), 0);
+	client.appendOutputBuffer(msg);
 }
 
 void	sendError(Client &client, int code)

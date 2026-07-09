@@ -32,9 +32,14 @@ class Client
 		const		std::string& getIp() const;
 		const		std::string& getBuffer() const;
 
+		const 		std::string& getOutputBuffer() const;
+
 		
 		void		appendBuffer(const std::string& buffer);
 		void		eraseBuffer(int length);
+
+		void		appendOutputBuffer(const std::string& buffer);
+		void		eraseOutputBuffer(int length);
 	
 	private:
 		int			_fd;
@@ -44,6 +49,7 @@ class Client
 		bool		_authenticated;
 		bool		_registered;
 		std::string	_buffer;
+		std::string _outputBuffer;
 };
 
 #endif

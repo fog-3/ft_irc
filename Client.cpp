@@ -49,7 +49,12 @@ const std::string& Client::getIp() const{
 }
 
 const std::string& Client::getBuffer() const{
-	return _buffer;
+	return (this->_buffer);
+}
+
+const std::string &Client::getOutputBuffer() const
+{
+    return (this->_outputBuffer);
 }
 
 bool	Client::getAuthenticated() const
@@ -98,4 +103,14 @@ void Client::appendBuffer(const std::string& buffer){
 
 void Client::eraseBuffer(int length){
 	_buffer.erase(0, length);
+}
+
+void Client::appendOutputBuffer(const std::string &buffer)
+{
+	_outputBuffer += buffer;
+}
+
+void Client::eraseOutputBuffer(int length)
+{
+	_outputBuffer.erase(0, length);
 }

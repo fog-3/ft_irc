@@ -101,12 +101,10 @@ void	Server::initServer(){
 		throw std::runtime_error("Error: listen failed");
 	}
 
-	std::cout << "Server successfully initialized and listening on port " << _port << std::endl;
+	this->printBanner();
 }
 
 void	Server::run(){
-	std::cout << "Waiting in the void.." << std::endl;
-
 	struct pollfd main_poll;
 	main_poll.fd = _serverFd;
 	main_poll.events = POLLIN;
@@ -115,15 +113,26 @@ void	Server::run(){
 
 	while (true) {
 		// The timeout is -1 to wait infinitely until a new message come
-		poll(&_pollfds[0], _pollfds.size(), -1);		
+		poll(&_pollfds[0], _pollfds.size(), -1);
 		for (size_t i = 0; i < _pollfds.size(); i++)
 		{
 			if (_pollfds[i].revents & POLLIN)
 			{
 				if (_pollfds[i].fd == _serverFd)
 					acceptNewClient();
-				else
-					readFromClient(_pollfds[i].fd);
+				else {
+					bool isAlive = readFromClient(_pollfds[i].fd);
+
+					if (isAlive == false){
+						i--;
+						continue;
+					}
+				}
+			}
+
+			if (_pollfds[i].revents & POLLOUT)
+			{
+				writeToClient(_pollfds[i].fd);
 			}
 		}
 	}
@@ -150,7 +159,7 @@ void	Server::acceptNewClient() {
 
 	struct pollfd newPollfd;
 	newPollfd.fd = newClientFd;
-	newPollfd.events = POLLIN;
+	newPollfd.events = POLLIN | POLLOUT;
 	newPollfd.revents = 0;
 	_pollfds.push_back(newPollfd);
 
@@ -160,7 +169,7 @@ void	Server::acceptNewClient() {
 	std::cout << "[SERVER] New connection from " << clientIP << " assigned FD " << newClientFd << std::endl;
 }
 
-void	Server::readFromClient(int client_fd){
+bool	Server::readFromClient(int client_fd){
 	char buffer[1024];
 
 	int bytesRead = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
@@ -170,12 +179,15 @@ void	Server::readFromClient(int client_fd){
 		currentClient->appendBuffer(buffer);
 
 		std::string bufferString = currentClient->getBuffer();
-		const long unsigned int endMessage = bufferString.find("\r\n");
-		if (endMessage != std::string::npos){
+		long unsigned int endMessage = bufferString.find("\r\n");
+		while (endMessage != std::string::npos)
+		{
 			std::string command = bufferString.substr(0, endMessage);
 			std::cout << "[FD " << client_fd << "] Command received: \"" << command << "\"" << std::endl;
 
 			currentClient->eraseBuffer(endMessage + 2);
+			bufferString = currentClient->getBuffer();
+			endMessage = bufferString.find("\r\n");
 		}
 	} else if (bytesRead == 0) {
 		close(client_fd);
@@ -189,10 +201,31 @@ void	Server::readFromClient(int client_fd){
 		delete _clients[client_fd];
 		_clients.erase(client_fd);
 		std::cout << "[SERVER] The client " << client_fd << " has disconnected" << std::endl;
+		return false;
 	} else {
 		std::cerr << "[SERVER] Error reading the socket message" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+void Server::writeToClient(int fd)
+{
+	Client* currentClient = _clients.at(fd);
+
+	std::string message = currentClient->getOutputBuffer();
+
+	if (message.empty())
+		return;
+	
+	int bytesSent = send(currentClient->getFd(), message.c_str(), message.length(), 0);
+	if (bytesSent > 0) {
+		currentClient->eraseOutputBuffer(bytesSent);
+	} else if (bytesSent < 0){
+		std::cerr << "Error sending data to client" << std::endl;std::cerr << "Error sending data to client" << std::endl;
 	}
 }
+
 std::string	Server::getPassword() const
 {
 	return (this->_password);
@@ -229,4 +262,52 @@ Client*	Server::findClient(std::string nick)
 			return (it->second);
 	}
 	return (NULL);
+}
+
+void Server::printBanner() const
+{
+	// Get current time
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+    char timeBuf[64];
+    strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%d %H:%M:%S", tm);
+
+    // Get PID
+    pid_t pid = getpid();
+
+    // Build a colourful (if supported) or plain banner
+    // We use ANSI codes for bright colours – they are safe on most terminals.
+    const std::string RST = "\033[0m";
+    const std::string BOLD = "\033[1m";
+    const std::string CYAN = "\033[36m";
+    const std::string YELLOW = "\033[33m";
+    const std::string GREEN = "\033[32m";
+    const std::string MAGENTA = "\033[35m";
+
+    // You can disable colours by setting these to empty strings if your terminal doesn't support them.
+    std::cout << "\n"
+              << CYAN << "   .────────────────────────────────────────────────────." << RST << "\n"
+              << CYAN << "  /──────────────────────────────────────────────────────\\" << RST << "\n"
+              << CYAN << "  │" << "         " << RST
+              << BOLD << "  >_   I R C   S E R V E R   v1.0    " << RST
+              << CYAN << "        │" << RST << "\n"
+              << CYAN << "  |                                                      |" << RST << "\n"
+              << CYAN << "  │" << RST
+              << "  PID     :  " << YELLOW << pid << RST << "                                    "
+              << CYAN << "│" << RST << "\n"
+              << CYAN << "  │" << RST
+              << "  Port    :  " << GREEN << _port << RST << "                                     "
+              << CYAN << "│" << RST << "\n"
+              << CYAN << "  │" << RST
+              << "  Address :  " << MAGENTA << "0.0.0.0" << RST << "                                  "
+              << CYAN << "│" << RST << "\n"
+              << CYAN << "  │" << RST
+              << "  Started :  " << timeBuf
+              << CYAN << "                      │" << RST << "\n"
+              << CYAN << "  \\──────────────────────────────────────────────────────/" << RST << "\n"
+              << CYAN << "   ˙────────────────────────────────────────────────────˙" << RST << "\n"
+              << CYAN << "                       .──[──────]──.                    " << RST << "\n"
+              << CYAN << "                      /──────────────\\                  " << RST << "\n"
+              << CYAN << "                      |══════════════|                  " << RST << "\n\n"
+              << GREEN << "     ✦  Server is ready. Waiting for connections...  ✦" << RST << "\n\n";
 }

@@ -35,10 +35,14 @@ class Server
 		std::vector<struct pollfd> _pollfds;
 
 		// --- Net helpers ---
-		void initServer();				// socket(), bind(), listen()
-		void acceptNewClient();			// accept()
-		void readFromClient(int fd);	// recv()
-		void disconnectClient(int fd);	// close() y limpieza de memoria
+		void	initServer();				// socket(), bind(), listen()
+		void	acceptNewClient();			// accept()
+		bool	readFromClient(int fd);	// recv()
+		void	disconnectClient(int fd);	// close() y limpieza de memoria
+		void	writeToClient(int fd);	// send()
+
+		// --- Other helpers ---
+		void printBanner() const;
 
 		// --- El puente lógico ---
 		void precessLine(Client& sender, const std::string& line);
