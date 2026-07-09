@@ -52,8 +52,6 @@ Server::~Server()
 	{
 		delete it->second;
 	}
-
-	std::cout << "Server destructor has been called." << std::endl;
 }
 
 // --- Net initialization
