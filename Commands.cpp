@@ -33,12 +33,30 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 		sendError(client, 433);
 		return ;
 	}
+	std::string	oldNick = client.getNickname();
+	bool	wasRegistered = client.getRegistered();
 	client.setNickname(msg.params[0]);
-	if (client.getUsername() != "")
+	if (client.getUsername() != "" && !client.getRegistered())
 	{
 		client.setRegistered(true);
 		sendToClient(client, ":ircserv 001 " + client.getNickname() + " :Welcome to the IRC server "
 			+ client.getNickname() + "!" + client.getUsername() + "@ircserv\r\n");
+	}
+	if (wasRegistered)
+	{
+		std::map<std::string, Channel*>	chan = serv.getChannels();
+		for (std::map<std::string, Channel*>::iterator it = chan.begin(); it != chan.end(); ++it)
+		{
+			std::map<Client *, bool>	members = it->second->getMembers();
+			std::map<Client *, bool>::iterator it2 = members.find(&client);
+			if (it2 != members.end())
+			{
+				for (std::map<Client*, bool>::iterator it3 = members.begin(); it3 != members.end(); ++it3)
+					sendToClient(*it3->first, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK :"
+						+ client.getNickname() + "\r\n");
+			}
+		}
+		sendToClient(client, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK :" + client.getNickname() + "\r\n");
 	}
 }
 
@@ -124,7 +142,17 @@ void	cmdJoin(Server &serv, Client &client, Message &msg)
 		newChan->addMember(&client);
 		sendToClient(client, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv JOIN "
 			+ newChan->getName() + "\r\n");
+		chan = newChan;
 	}
+	std::string nicks = "";
+	std::map<Client*, bool> members2 = chan->getMembers();
+	for (std::map<Client*, bool>::iterator it3 = members2.begin(); it3 != members2.end(); ++it3)
+	{
+		nicks += it3->first->getNickname();
+		nicks += " ";
+	}
+	sendToClient(client, ":ircserv 353 " + client.getNickname() + " = " + chan->getName() + " :" + nicks + "\r\n");
+	sendToClient(client, ":ircserv 366 " + client.getNickname() + " " + chan->getName() + " :End of /NAMES list\r\n");
 }
 
 void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
@@ -143,8 +171,15 @@ void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
 	if (msg.params[0][0] == '#' && chan)
 	{
 		std::map<Client*, bool> members = chan->getMembers();
+		if (members.find(&client) == members.end())
+		{
+			sendError(client, 442);
+			return ;
+		}
 		for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
 		{
+			if (it->first == &client)
+				continue ;
 			sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PRIVMSG "
 				+ msg.params[0] + " :" + msg.params[1] + "\r\n");
 		}
@@ -192,6 +227,8 @@ void	cmdPart(Server &serv, Client &client, Message &msg)
 			+ chan->getName() + "\r\n");
 	}
 	chan->removeMember(&client);
+	if (chan->getMembers().empty())
+		serv.removeChannel(chan->getName());
 }
 
 void	cmdKick(Server &serv, Client &client, Message &msg)
@@ -230,18 +267,18 @@ void	cmdKick(Server &serv, Client &client, Message &msg)
 		sendError(client, 401);
 		return ;
 	}
-	std::string	reason = msg.params.size() >= 3 ? msg.params[2] : msg.params[1];
-	for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
-	{
-		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv KICK "
-			+ chan->getName() + " " + msg.params[1] + " :" + reason + "\r\n");
-	}
 	if (members.find(rem) != members.end())
 		chan->removeMember(rem);
 	else
 	{
 		sendError(client, 442);
 		return ;
+	}
+	std::string	reason = msg.params.size() >= 3 ? msg.params[2] : "No reason";
+	for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
+	{
+		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv KICK "
+			+ chan->getName() + " " + msg.params[1] + " :" + reason + "\r\n");
 	}
 }
 
@@ -326,6 +363,9 @@ void	cmdTopic(Server &serv, Client &client, Message &msg)
 		if (!chan->getTopicRestricted() || it->second)
 		{
 			chan->setTopic(msg.params[1]);
+			for (std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)
+				sendToClient(*it2->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv TOPIC "
+					+ chan->getName() + " :" + chan->getTopic() + "\r\n");
 		}
 		else
 		{
@@ -373,15 +413,15 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		chan->setTopicRestricted(true);
 	else if (msg.params[1] == "-t")
 		chan->setTopicRestricted(false);
-	else if (msg.params[1] == "+k" && msg.params.size() == 3)
+	else if (msg.params[1] == "+k" && msg.params.size() >= 3)
 		chan->setKey(msg.params[2]);
 	else if (msg.params[1] == "-k")
 		chan->setKey("");
-	else if (msg.params[1] == "+l" && msg.params.size() == 3)
+	else if (msg.params[1] == "+l" && msg.params.size() >= 3)
 		chan->setLimit(atoi(msg.params[2].c_str()));
 	else if (msg.params[1] == "-l")
 		chan->setLimit(-1);
-	else if (msg.params[1] == "+o" && msg.params.size() == 3)
+	else if (msg.params[1] == "+o" && msg.params.size() >= 3)
 	{
 		Client	*rem = serv.findClient(msg.params[2]);
 		if (!rem)
@@ -397,7 +437,7 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		}
 		chan->setOperator(rem, true);
 	}
-	else if (msg.params[1] == "-o" && msg.params.size() == 3)
+	else if (msg.params[1] == "-o" && msg.params.size() >= 3)
 	{
 		Client	*rem2 = serv.findClient(msg.params[2]);
 		if (!rem2)
@@ -412,6 +452,12 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 			return ;
 		}
 		chan->setOperator(rem2, false);
+	}
+	std::string	reason = msg.params.size() >= 3 ? " " + msg.params[2] : "";
+	for (std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)
+	{
+		sendToClient(*it2->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv MODE "
+			+ chan->getName() + " " + msg.params[1] + reason + "\r\n");
 	}
 }
 
@@ -428,8 +474,18 @@ void	cmdPing(Server &serv, Client &client, Message &msg)
 
 void	cmdQuit(Server &serv, Client &client, Message &msg)
 {
-	(void)serv;
-	(void)client;
-	(void)msg;
-	// TODO
+	std::map<std::string, Channel*>	chan = serv.getChannels();
+	for (std::map<std::string, Channel*>::iterator it = chan.begin(); it != chan.end(); ++it)
+	{
+		std::map<Client *, bool>	members = it->second->getMembers();
+		std::map<Client *, bool>::iterator it2 = members.find(&client);
+		if (it2 != members.end())
+		{
+			std::string reason = msg.params.empty() ? "" : " :" + msg.params[0];
+			for (std::map<Client*, bool>::iterator it3 = members.begin(); it3 != members.end(); ++it3)
+				sendToClient(*it3->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv QUIT"
+				+ reason + "\r\n");
+		}
+	}
+	serv.disconnectClient(client.getFd());
 }

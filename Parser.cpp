@@ -39,12 +39,12 @@ Message	Parser(std::string mes)
 		m.prefix = split(mes, start);
 	}
 	m.command = split(mes, start);
-	while(mes[start] != ':' && start < mes.size())
+	while(start < mes.size() && mes[start] != ':')
 		m.params.push_back(split(mes, start));
 	if (start < mes.size() && mes[start] == ':')
 	{
 		++start;
-		m.params.push_back(split(mes, start));
+		m.params.push_back(mes.substr(start));
 	}
 	return (m);
 }
