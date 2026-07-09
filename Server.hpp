@@ -22,9 +22,12 @@ class Server
 		std::string	getPassword() const;
 		Channel*	findChannel(std::string name);
 		void		addChannel(Channel *channel);
+		void		removeChannel(std::string channel);
 		bool		isNickTaken(std::string nick);
 		Client*		findClient(std::string nick);
 		void		run();
+		void		disconnectClient(int fd);	// close() and free memory
+		std::map<std::string, Channel*>	getChannels() const;
 	
 	private:
 		int _port;
@@ -33,19 +36,14 @@ class Server
 		std::map<int, Client*> _clients;
 		std::map<std::string, Channel*> _channels;
 		std::vector<struct pollfd> _pollfds;
-
 		// --- Net helpers ---
 		void	initServer();				// socket(), bind(), listen()
 		void	acceptNewClient();			// accept()
 		bool	readFromClient(int fd);	// recv()
-		void	disconnectClient(int fd);	// close() y limpieza de memoria
 		void	writeToClient(int fd);	// send()
 
 		// --- Other helpers ---
 		void printBanner() const;
-
-		// --- El puente lógico ---
-		void precessLine(Client& sender, const std::string& line);
 };
 
 #endif

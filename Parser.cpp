@@ -30,21 +30,18 @@ Message	Parser(std::string mes)
 	}
 	Message	m;
 	size_t	start = 0;
-	size_t	n = mes.find("\r\n");
-	if (n != std::string::npos)
-		mes.erase(n);
 	if (mes[0] == ':')
 	{
 		++start;
 		m.prefix = split(mes, start);
 	}
 	m.command = split(mes, start);
-	while(mes[start] != ':' && start < mes.size())
+	while(start < mes.size() && mes[start] != ':')
 		m.params.push_back(split(mes, start));
 	if (start < mes.size() && mes[start] == ':')
 	{
 		++start;
-		m.params.push_back(split(mes, start));
+		m.params.push_back(mes.substr(start));
 	}
 	return (m);
 }

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <cstring>
+#include "Commands.hpp"
 
 Server::Server() : _port(0), _password(), _clients(), _channels(), _pollfds()
 {
@@ -180,26 +181,25 @@ bool	Server::readFromClient(int client_fd){
 
 		std::string bufferString = currentClient->getBuffer();
 		long unsigned int endMessage = bufferString.find("\r\n");
-		while (endMessage != std::string::npos)
-		{
+		while (endMessage != std::string::npos){
 			std::string command = bufferString.substr(0, endMessage);
-			std::cout << "[FD " << client_fd << "] Command received: \"" << command << "\"" << std::endl;
-
+			processLine(*this, *currentClient, command);
 			currentClient->eraseBuffer(endMessage + 2);
 			bufferString = currentClient->getBuffer();
 			endMessage = bufferString.find("\r\n");
 		}
-	} else if (bytesRead == 0) {
-		close(client_fd);
 
-		for (size_t i = 0; i < _pollfds.size(); i++)
+		long unsigned int endMessage2 = bufferString.find("\n");
+		while (endMessage2 != std::string::npos)
 		{
-			if (_pollfds[i].fd == client_fd)
-				_pollfds.erase(_pollfds.begin() + i);
+			std::string command = bufferString.substr(0, endMessage2);
+			processLine(*this, *currentClient, command);
+			currentClient->eraseBuffer(endMessage2 + 1);
+			bufferString = currentClient->getBuffer();
+			endMessage = bufferString.find("\n");
 		}
-
-		delete _clients[client_fd];
-		_clients.erase(client_fd);
+	} else if (bytesRead == 0) {
+		disconnectClient(client_fd);
 		std::cout << "[SERVER] The client " << client_fd << " has disconnected" << std::endl;
 		return false;
 	} else {
@@ -242,6 +242,12 @@ Channel* Server::findChannel(std::string name)
 void	Server::addChannel(Channel *channel)
 {
 	_channels[channel->getName()] = channel;
+}
+
+void	Server::removeChannel(std::string channel)
+{
+	delete	_channels[channel];
+	_channels.erase(channel);
 }
 
 bool	Server::isNickTaken(std::string nick)
@@ -310,4 +316,32 @@ void Server::printBanner() const
               << CYAN << "                      /──────────────\\                  " << RST << "\n"
               << CYAN << "                      |══════════════|                  " << RST << "\n\n"
               << GREEN << "     ✦  Server is ready. Waiting for connections...  ✦" << RST << "\n\n";
+}
+
+std::map<std::string, Channel*>	Server::getChannels() const
+{
+	return (this->_channels);
+}
+
+void	Server::disconnectClient(int fd)
+{
+	close(fd);
+	for (size_t i = 0; i < _pollfds.size(); i++)
+	{
+		if (_pollfds[i].fd == fd)
+			_pollfds.erase(_pollfds.begin() + i);
+	}
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
+	{
+		it->second->removeMember(_clients[fd]);
+		if (it->second->getMembers().empty())
+		{
+			delete it->second;
+			it = _channels.erase(it);
+		}
+		else
+			++it;
+	}
+	delete _clients[fd];
+	_clients.erase(fd);
 }
