@@ -33,7 +33,7 @@ Client &Client::operator= (Client const &copy)
 
 Client::~Client()
 {
-	std::cout << "Client destructor has been called." << std::endl;
+	std::cout << "Client " << this->_fd << " whith the ip: " << this->_ip << " quit the server" << std::endl;
 }
 
 int	Client::getFd() const{

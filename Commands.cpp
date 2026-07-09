@@ -221,10 +221,11 @@ void	cmdPart(Server &serv, Client &client, Message &msg)
 		sendError(client, 442);
 		return ;
 	}
+	std::string	reason = msg.params.size() >= 2 ? msg.params[1] : "No reason";
 	for (std::map<Client*, bool>::iterator it = members.begin(); it != members.end(); ++it)
 	{
 		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PART "
-			+ chan->getName() + "\r\n");
+			+ chan->getName() + " :" + reason + "\r\n");
 	}
 	chan->removeMember(&client);
 	if (chan->getMembers().empty())
@@ -488,4 +489,10 @@ void	cmdQuit(Server &serv, Client &client, Message &msg)
 		}
 	}
 	serv.disconnectClient(client.getFd());
+}
+
+void	cmdQuitServer(Server &serv, Client &client, Message &msg) {
+	(void) client;
+	(void) msg;
+	serv.setLooping(false);
 }

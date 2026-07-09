@@ -28,6 +28,8 @@ void	processLine(Server &serv, Client &client, std::string msg)
 		cmdPing(serv, client, mes);
 	else if (mes.command == "QUIT")
 		cmdQuit(serv, client, mes);
+	else if (mes.command == "QUIT_SERVER")
+		cmdQuitServer(serv, client, mes);
 	else
 	{
 		sendError(client, 421);

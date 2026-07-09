@@ -8,17 +8,17 @@
 #include <cstring>
 #include "Commands.hpp"
 
-Server::Server() : _port(0), _password(), _clients(), _channels(), _pollfds()
+Server::Server() : _port(0), _password(), _clients(), _channels(), _pollfds(), _isLooping(true)
 {
 	std::cout << "[SERVER] Default constructor has been called." << std::endl;
 }
 
-Server::Server(int port, std::string password) : _port(port), _serverFd(-1), _password(password), _clients(), _channels(), _pollfds()
+Server::Server(int port, std::string password) : _port(port), _serverFd(-1), _password(password), _clients(), _channels(), _pollfds(), _isLooping(true)
 {
 	initServer();
 }
 
-Server::Server(Server const &copy) : _port(copy._port), _password(copy._password), _clients(copy._clients), _channels(copy._channels), _pollfds(copy._pollfds)
+Server::Server(Server const &copy) : _port(copy._port), _password(copy._password), _clients(copy._clients), _channels(copy._channels), _pollfds(copy._pollfds), _isLooping(true)
 {
 	std::cout << "Server Copy constructor has been called." << std::endl;
 }
@@ -112,7 +112,7 @@ void	Server::run(){
 	main_poll.revents = 0;
 	_pollfds.push_back(main_poll);
 
-	while (true) {
+	while (this->_isLooping) {
 		// The timeout is -1 to wait infinitely until a new message come
 		poll(&_pollfds[0], _pollfds.size(), -1);
 		for (size_t i = 0; i < _pollfds.size(); i++)
@@ -183,9 +183,9 @@ bool	Server::readFromClient(int client_fd){
 		long unsigned int endMessage = bufferString.find("\r\n");
 		while (endMessage != std::string::npos){
 			std::string command = bufferString.substr(0, endMessage);
-			processLine(*this, *currentClient, command);
 			currentClient->eraseBuffer(endMessage + 2);
 			bufferString = currentClient->getBuffer();
+			processLine(*this, *currentClient, command);
 			endMessage = bufferString.find("\r\n");
 		}
 
@@ -193,10 +193,10 @@ bool	Server::readFromClient(int client_fd){
 		while (endMessage2 != std::string::npos)
 		{
 			std::string command = bufferString.substr(0, endMessage2);
-			processLine(*this, *currentClient, command);
 			currentClient->eraseBuffer(endMessage2 + 1);
+			processLine(*this, *currentClient, command);
 			bufferString = currentClient->getBuffer();
-			endMessage = bufferString.find("\n");
+			endMessage2 = bufferString.find("\n");
 		}
 	} else if (bytesRead == 0) {
 		disconnectClient(client_fd);
@@ -211,6 +211,9 @@ bool	Server::readFromClient(int client_fd){
 
 void Server::writeToClient(int fd)
 {
+	if (_clients.find(fd) == _clients.end()) {
+		return;
+	}
 	Client* currentClient = _clients.at(fd);
 
 	std::string message = currentClient->getOutputBuffer();
@@ -229,6 +232,11 @@ void Server::writeToClient(int fd)
 std::string	Server::getPassword() const
 {
 	return (this->_password);
+}
+
+void Server::setLooping(bool isLooping)
+{
+	this->_isLooping = isLooping;
 }
 
 Channel* Server::findChannel(std::string name)
@@ -337,7 +345,7 @@ void	Server::disconnectClient(int fd)
 		if (it->second->getMembers().empty())
 		{
 			delete it->second;
-			it = _channels.erase(it);
+			_channels.erase(it++);
 		}
 		else
 			++it;

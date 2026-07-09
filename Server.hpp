@@ -20,6 +20,7 @@ class Server
 		~Server();
 
 		std::string	getPassword() const;
+		void		setLooping(bool isLooping);
 		Channel*	findChannel(std::string name);
 		void		addChannel(Channel *channel);
 		void		removeChannel(std::string channel);
@@ -36,6 +37,8 @@ class Server
 		std::map<int, Client*> _clients;
 		std::map<std::string, Channel*> _channels;
 		std::vector<struct pollfd> _pollfds;
+		bool _isLooping;
+
 		// --- Net helpers ---
 		void	initServer();				// socket(), bind(), listen()
 		void	acceptNewClient();			// accept()

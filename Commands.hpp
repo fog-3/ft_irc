@@ -23,5 +23,6 @@ void	cmdTopic(Server &serv, Client &client, Message &msg);
 void	cmdMode(Server &serv, Client &client, Message &msg);
 void	cmdPing(Server &serv, Client &client, Message &msg);
 void	cmdQuit(Server &serv, Client &client, Message &msg);
+void	cmdQuitServer(Server &serv, Client &client, Message &msg);
 
 #endif
