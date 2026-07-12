@@ -52,8 +52,12 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 			if (it2 != members.end())
 			{
 				for (std::map<Client*, bool>::iterator it3 = members.begin(); it3 != members.end(); ++it3)
+				{
+					if (it3->first == &client)
+						continue ;
 					sendToClient(*it3->first, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK "
 						+ client.getNickname() + "\r\n");
+				}
 			}
 		}
 		sendToClient(client, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK " + client.getNickname() + "\r\n");
@@ -229,6 +233,7 @@ void	cmdPart(Server &serv, Client &client, Message &msg)
 		sendToClient(*it->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PART "
 			+ chan->getName() + " :" + reason + "\r\n");
 	}
+	chan->promoteOperator(&client);
 	chan->removeMember(&client);
 	if (chan->getMembers().empty())
 		serv.removeChannel(chan->getName());
@@ -491,20 +496,7 @@ void	cmdPing(Server &serv, Client &client, Message &msg)
 
 void	cmdQuit(Server &serv, Client &client, Message &msg)
 {
-	std::map<std::string, Channel*>	chan = serv.getChannels();
-	for (std::map<std::string, Channel*>::iterator it = chan.begin(); it != chan.end(); ++it)
-	{
-		std::map<Client *, bool>	members = it->second->getMembers();
-		std::map<Client *, bool>::iterator it2 = members.find(&client);
-		if (it2 != members.end())
-		{
-			std::string reason = msg.params.empty() ? "" : " :" + msg.params[0];
-			for (std::map<Client*, bool>::iterator it3 = members.begin(); it3 != members.end(); ++it3)
-				sendToClient(*it3->first, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv QUIT"
-				+ reason + "\r\n");
-		}
-	}
-	serv.disconnectClient(client.getFd());
+	serv.disconnectClient(client.getFd(), msg.params.empty() ? "Quit" : msg.params[0]);
 }
 
 void	cmdQuitServer(Server &serv, Client &client, Message &msg) {

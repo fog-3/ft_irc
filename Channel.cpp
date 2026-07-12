@@ -125,3 +125,18 @@ void	Channel::setOperator(Client *client, bool op)
 	std::map<Client *, bool>::iterator it = _members.find(client);
 	it->second = op;
 }
+
+void	Channel::promoteOperator(Client* leaving)
+{
+	if (_members.find(leaving) == _members.end())
+		return ;
+	for (std::map<Client *, bool>::iterator it = _members.begin(); it != _members.end(); ++it)
+		if (it->second == true && it->first != leaving)
+			return ;
+	for (std::map<Client *, bool>::iterator it2 = _members.begin(); it2 != _members.end(); ++it2)
+		if (it2->first != leaving)
+		{
+			setOperator(it2->first, true);
+			return ;
+		}
+}

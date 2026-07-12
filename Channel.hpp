@@ -31,6 +31,7 @@ class Channel
 	bool						getTopicRestricted() const;
 	void						setTopicRestricted(bool set);
 	void						setOperator(Client *client, bool op);
+	void 						promoteOperator(Client* leaving);
 	
 	private:
 	std::string 				_name;

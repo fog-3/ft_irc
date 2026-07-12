@@ -205,7 +205,7 @@ bool	Server::readFromClient(int client_fd){
 			endMessage2 = bufferString.find("\n");
 		}
 	} else if (bytesRead == 0) {
-		disconnectClient(client_fd);
+		disconnectClient(client_fd, "Connection closed");
 		std::cout << "[SERVER] The client " << client_fd << " has disconnected" << std::endl;
 		return false;
 	} else {
@@ -337,7 +337,7 @@ std::map<std::string, Channel*>	Server::getChannels() const
 	return (this->_channels);
 }
 
-void	Server::disconnectClient(int fd)
+void	Server::disconnectClient(int fd, std::string reason)
 {
 	close(fd);
 	for (size_t i = 0; i < _pollfds.size(); i++)
@@ -352,8 +352,9 @@ void	Server::disconnectClient(int fd)
 		{
 			for(std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)
 				sendToClient(*it2->first, ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername()
-					+ "@ircserv QUIT" + " :Connection closed" + "\r\n");
+					+ "@ircserv QUIT :" + reason + "\r\n");
 		}
+		it->second->promoteOperator(_clients[fd]);
 		it->second->removeMember(_clients[fd]);
 		if (it->second->getMembers().empty())
 		{

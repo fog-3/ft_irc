@@ -27,7 +27,7 @@ class Server
 		bool		isNickTaken(std::string nick);
 		Client*		findClient(std::string nick);
 		void		run();
-		void		disconnectClient(int fd);	// close() and free memory
+		void		disconnectClient(int fd, std::string reason);	// close() and free memory
 		std::map<std::string, Channel*>	getChannels() const;
 	
 	private:
