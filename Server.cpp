@@ -183,7 +183,11 @@ bool	Server::readFromClient(int client_fd){
 			std::string command = bufferString.substr(0, endMessage);
 			currentClient->eraseBuffer(endMessage + 2);
 			bufferString = currentClient->getBuffer();
+			if (command.empty())
+				continue ;
 			processLine(*this, *currentClient, command);
+			if (_clients.find(client_fd) == _clients.end())
+				return false;
 			endMessage = bufferString.find("\r\n");
 		}
 
@@ -192,8 +196,12 @@ bool	Server::readFromClient(int client_fd){
 		{
 			std::string command = bufferString.substr(0, endMessage2);
 			currentClient->eraseBuffer(endMessage2 + 1);
-			processLine(*this, *currentClient, command);
 			bufferString = currentClient->getBuffer();
+			if (command.empty())
+				continue ;
+			processLine(*this, *currentClient, command);
+			if (_clients.find(client_fd) == _clients.end())
+				return false;
 			endMessage2 = bufferString.find("\n");
 		}
 	} else if (bytesRead == 0) {
@@ -339,6 +347,13 @@ void	Server::disconnectClient(int fd)
 	}
 	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
 	{
+		std::map<Client *, bool> members = it->second->getMembers();
+		if (members.find(_clients[fd]) != members.end())
+		{
+			for(std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)
+				sendToClient(*it2->first, ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername()
+					+ "@ircserv QUIT" + " :Connection closed" + "\r\n");
+		}
 		it->second->removeMember(_clients[fd]);
 		if (it->second->getMembers().empty())
 		{

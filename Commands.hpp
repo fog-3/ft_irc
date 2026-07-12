@@ -7,7 +7,7 @@
 #include "Message.hpp"
 #include "Server.hpp"
 
-void	sendError(Client &client, int code);
+void	sendError(Client &client, int code, std::string context = "");
 void	sendToClient(Client &client, std::string msg);
 void	processLine(Server &serv, Client &client, std::string msg);
 

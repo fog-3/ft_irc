@@ -30,7 +30,7 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 	}
 	if (serv.isNickTaken(msg.params[0]))
 	{
-		sendError(client, 433);
+		sendError(client, 433, msg.params[0]);
 		return ;
 	}
 	std::string	oldNick = client.getNickname();
@@ -52,11 +52,11 @@ void	cmdNick(Server &serv, Client &client, Message &msg)
 			if (it2 != members.end())
 			{
 				for (std::map<Client*, bool>::iterator it3 = members.begin(); it3 != members.end(); ++it3)
-					sendToClient(*it3->first, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK :"
+					sendToClient(*it3->first, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK "
 						+ client.getNickname() + "\r\n");
 			}
 		}
-		sendToClient(client, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK :" + client.getNickname() + "\r\n");
+		sendToClient(client, ":" + oldNick + "!" + client.getUsername() + "@ircserv NICK " + client.getNickname() + "\r\n");
 	}
 }
 
@@ -68,7 +68,7 @@ void	cmdUser(Server &serv, Client &client, Message &msg)
 		sendError(client, 462);
 		return ;
 	}
-	if (msg.params.empty())
+	if (msg.params.size() < 4)
 	{
 		sendError(client, 461);
 		return ;
@@ -105,12 +105,12 @@ void	cmdJoin(Server &serv, Client &client, Message &msg)
 		std::map<Client*, bool> members = chan->getMembers();
 		if (chan->getLimit() != -1 && static_cast<size_t>(chan->getLimit()) < members.size() + 1)
 		{
-			sendError(client, 471);
+			sendError(client, 471, chan->getName());
 			return ;
 		}
 		if (members.find(&client) != members.end())
 		{
-			sendError(client, 443);
+			sendError(client, 443, client.getNickname());
 			return ;
 		}
 		if (chan->getInviteOnly())
@@ -119,13 +119,13 @@ void	cmdJoin(Server &serv, Client &client, Message &msg)
 			std::vector<std::string>::iterator it = std::find(inviteList.begin(), inviteList.end(), client.getNickname());
 			if (it == inviteList.end())
 			{
-				sendError(client, 473);
+				sendError(client, 473, chan->getName());
 				return ;
 			}
 		}
 		if (chan->getKey() != "" && (msg.params.size() < 2 || msg.params[1] != chan->getKey()))
 		{
-			sendError(client, 475);
+			sendError(client, 475, chan->getName());
 			return ;
 		}
 		chan->addMember(&client);
@@ -148,6 +148,8 @@ void	cmdJoin(Server &serv, Client &client, Message &msg)
 	std::map<Client*, bool> members2 = chan->getMembers();
 	for (std::map<Client*, bool>::iterator it3 = members2.begin(); it3 != members2.end(); ++it3)
 	{
+		if (it3->second)
+			nicks += "@";
 		nicks += it3->first->getNickname();
 		nicks += " ";
 	}
@@ -189,7 +191,7 @@ void	cmdPrivmsg(Server &serv, Client &client, Message &msg)
 		Client	*addr = serv.findClient(msg.params[0]);
 		if (!addr)
 		{
-			sendError(client, 401);
+			sendError(client, 401, msg.params[0]);
 			return ;
 		}
 		sendToClient(*addr, ":" + client.getNickname() + "!" + client.getUsername() + "@ircserv PRIVMSG "
@@ -265,7 +267,7 @@ void	cmdKick(Server &serv, Client &client, Message &msg)
 	Client	*rem = serv.findClient(msg.params[1]);
 	if (!rem)
 	{
-		sendError(client, 401);
+		sendError(client, 401, msg.params[1]);
 		return ;
 	}
 	if (members.find(rem) != members.end())
@@ -316,7 +318,7 @@ void	cmdInvite(Server &serv, Client &client, Message &msg)
 	Client	*inv = serv.findClient(msg.params[0]);
 	if (!inv)
 	{
-		sendError(client, 401);
+		sendError(client, 401, msg.params[0]);
 		return ;
 	}
 	chan->addToInviteList(inv->getNickname());
@@ -378,7 +380,7 @@ void	cmdTopic(Server &serv, Client &client, Message &msg)
 
 void	cmdMode(Server &serv, Client &client, Message &msg)
 {
-	if (msg.params.size() < 2)
+	if (msg.params.empty())
 	{
 		sendError(client, 461);
 		return ;
@@ -392,6 +394,20 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 	if (!chan)
 	{
 		sendError(client, 403);
+		return ;
+	}
+	if(msg.params.size() == 1)
+	{
+		std::string	modes = "+";
+		if (chan->getInviteOnly())
+			modes += "i";
+		if (chan->getTopicRestricted())
+			modes += "t";
+		if (chan->getKey() != "")
+			modes += "k";
+		if (chan->getLimit() != -1)
+			modes += "l";
+		sendToClient(client, ":ircserv 324 " + client.getNickname() + " " + chan->getName() +  " " + modes + "\r\n");
 		return ;
 	}
 	std::map<Client*, bool> members = chan->getMembers();
@@ -427,7 +443,7 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		Client	*rem = serv.findClient(msg.params[2]);
 		if (!rem)
 		{
-			sendError(client, 401);
+			sendError(client, 401, msg.params[2]);
 			return ;
 		}
 		std::map<Client *, bool>::iterator it2 = members.find(rem);
@@ -443,7 +459,7 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		Client	*rem2 = serv.findClient(msg.params[2]);
 		if (!rem2)
 		{
-			sendError(client, 401);
+			sendError(client, 401, msg.params[2]);
 			return ;
 		}
 		std::map<Client *, bool>::iterator it3 = members.find(rem2);

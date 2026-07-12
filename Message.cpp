@@ -32,7 +32,7 @@ void	processLine(Server &serv, Client &client, std::string msg)
 		cmdQuitServer(serv, client, mes);
 	else
 	{
-		sendError(client, 421);
+		sendError(client, 421, mes.command);
 		return ;
 	}
 }
@@ -42,7 +42,7 @@ void	sendToClient(Client &client, std::string msg)
 	client.appendOutputBuffer(msg);
 }
 
-void	sendError(Client &client, int code)
+void	sendError(Client &client, int code, std::string context)
 {
 	std::string nick = client.getNickname().empty() ? "*" : client.getNickname();
 	if (code == 431)
@@ -50,7 +50,7 @@ void	sendError(Client &client, int code)
 	else if (code == 432)
 		sendToClient(client, ":ircserv 432 " + nick + " :Erroneous nickname\r\n");
 	else if (code == 433)
-		sendToClient(client, ":ircserv 433 " + nick + " :Nickname already in use\r\n");
+		sendToClient(client, ":ircserv 433 " + nick + " " + context + " :Nickname already in use\r\n");
 	else if (code == 451)
 		sendToClient(client, ":ircserv 451 " + nick + " :Not registered\r\n");
 	else if (code == 461)
@@ -62,17 +62,17 @@ void	sendError(Client &client, int code)
 	else if (code == 404)
 		sendToClient(client, ":ircserv 404 " + nick + " :Cannot send to channel\r\n");
 	else if (code == 401)
-		sendToClient(client, ":ircserv 401 " + nick + " :No such nickname\r\n");
+		sendToClient(client, ":ircserv 401 " + nick + " " + context + " :No such nickname\r\n");
 	else if (code == 442)
 		sendToClient(client, ":ircserv 442 " + nick + " :Not on channel\r\n");
 	else if (code == 482)
 		sendToClient(client, ":ircserv 482 " + nick + " :Not channel operator\r\n");
 	else if (code == 471)
-		sendToClient(client, ":ircserv 471 " + nick + " :Channel is full(limit)\r\n");
+		sendToClient(client, ":ircserv 471 " + nick + " " + context + " :Channel is full(limit)\r\n");
 	else if (code == 473)
-		sendToClient(client, ":ircserv 473 " + nick + " :Invite only channel\r\n");
+		sendToClient(client, ":ircserv 473 " + nick + " " + context + " :Invite only channel\r\n");
 	else if (code == 475)
-		sendToClient(client, ":ircserv 475 " + nick + " :Bad channel key\r\n");
+		sendToClient(client, ":ircserv 475 " + nick + " " + context + " :Bad channel key\r\n");
 	else if (code == 464)
 		sendToClient(client, ":ircserv 464 " + nick + " :Password incorrect\r\n");
 	else if (code == 443)
@@ -80,5 +80,5 @@ void	sendError(Client &client, int code)
 	else if (code == 331)
 		sendToClient(client, ":ircserv 331 " + nick + " :No topic is set\r\n");
 	else if (code == 421)
-		sendToClient(client, ":ircserv 421 " + nick + " :Unknown command\r\n");
+		sendToClient(client, ":ircserv 421 " + nick + " " + context + " :Unknown command\r\n");
 }
