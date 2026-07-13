@@ -435,45 +435,82 @@ void	cmdMode(Server &serv, Client &client, Message &msg)
 		chan->setTopicRestricted(true);
 	else if (msg.params[1] == "-t")
 		chan->setTopicRestricted(false);
-	else if (msg.params[1] == "+k" && msg.params.size() >= 3)
-		chan->setKey(msg.params[2]);
+	else if (msg.params[1] == "+k")
+	{
+		if (msg.params.size() >= 3)
+			chan->setKey(msg.params[2]);
+		else
+		{
+			sendError(client, 461);
+			return ;
+		}
+	}
 	else if (msg.params[1] == "-k")
 		chan->setKey("");
-	else if (msg.params[1] == "+l" && msg.params.size() >= 3)
-		chan->setLimit(atoi(msg.params[2].c_str()));
+	else if (msg.params[1] == "+l")
+	{
+		if (msg.params.size() >= 3)
+			chan->setLimit(atoi(msg.params[2].c_str()));
+		else
+		{
+			sendError(client, 461);
+			return ;
+		}
+	}
 	else if (msg.params[1] == "-l")
 		chan->setLimit(-1);
-	else if (msg.params[1] == "+o" && msg.params.size() >= 3)
+	else if (msg.params[1] == "+o")
 	{
-		Client	*rem = serv.findClient(msg.params[2]);
-		if (!rem)
+		if (msg.params.size() >= 3)
 		{
-			sendError(client, 401, msg.params[2]);
+			Client	*rem = serv.findClient(msg.params[2]);
+			if (!rem)
+			{
+				sendError(client, 401, msg.params[2]);
+				return ;
+			}
+			std::map<Client *, bool>::iterator it2 = members.find(rem);
+			if (it2 == members.end())
+			{
+				sendError(client, 442);
+				return ;
+			}
+			chan->setOperator(rem, true);
+		}
+		else
+		{
+			sendError(client, 461);
 			return ;
 		}
-		std::map<Client *, bool>::iterator it2 = members.find(rem);
-		if (it2 == members.end())
-		{
-			sendError(client, 442);
-			return ;
-		}
-		chan->setOperator(rem, true);
 	}
-	else if (msg.params[1] == "-o" && msg.params.size() >= 3)
+	else if (msg.params[1] == "-o")
 	{
-		Client	*rem2 = serv.findClient(msg.params[2]);
-		if (!rem2)
+		if (msg.params.size() >= 3)
 		{
-			sendError(client, 401, msg.params[2]);
+			Client	*rem2 = serv.findClient(msg.params[2]);
+			if (!rem2)
+			{
+				sendError(client, 401, msg.params[2]);
+				return ;
+			}
+			std::map<Client *, bool>::iterator it3 = members.find(rem2);
+			if (it3 == members.end())
+			{
+				sendError(client, 442);
+				return ;
+			}
+			chan->setOperator(rem2, false);
+		}
+		else
+		{
+			sendError(client, 461);
 			return ;
 		}
-		std::map<Client *, bool>::iterator it3 = members.find(rem2);
-		if (it3 == members.end())
-		{
-			sendError(client, 442);
-			return ;
-		}
-		chan->setOperator(rem2, false);
+	}
+	else
+	{
+		sendError(client, 472, msg.params[1]);
+		return ;
 	}
 	std::string	reason = msg.params.size() >= 3 ? " " + msg.params[2] : "";
 	for (std::map<Client*, bool>::iterator it2 = members.begin(); it2 != members.end(); ++it2)

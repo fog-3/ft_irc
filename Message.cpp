@@ -81,4 +81,6 @@ void	sendError(Client &client, int code, std::string context)
 		sendToClient(client, ":ircserv 331 " + nick + " :No topic is set\r\n");
 	else if (code == 421)
 		sendToClient(client, ":ircserv 421 " + nick + " " + context + " :Unknown command\r\n");
+	else if (code == 472)
+		sendToClient(client, ":ircserv 472 " + nick + " " + context + " :Is unknown mode char to me\r\n");
 }

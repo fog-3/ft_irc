@@ -184,7 +184,10 @@ bool	Server::readFromClient(int client_fd){
 			currentClient->eraseBuffer(endMessage + 2);
 			bufferString = currentClient->getBuffer();
 			if (command.empty())
+			{
+				endMessage = bufferString.find("\r\n");
 				continue ;
+			}
 			processLine(*this, *currentClient, command);
 			if (_clients.find(client_fd) == _clients.end())
 				return false;
@@ -198,7 +201,10 @@ bool	Server::readFromClient(int client_fd){
 			currentClient->eraseBuffer(endMessage2 + 1);
 			bufferString = currentClient->getBuffer();
 			if (command.empty())
+			{
+				endMessage2 = bufferString.find("\n");
 				continue ;
+			}
 			processLine(*this, *currentClient, command);
 			if (_clients.find(client_fd) == _clients.end())
 				return false;
